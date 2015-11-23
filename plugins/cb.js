@@ -14,6 +14,20 @@ beacon request. Request durations require support of the resources timing api.
 As of this writing, is it supported By all the major browsers except Safari
 (http://caniuse.com/#search=resource%20timing)
 
+In order to measure chartbeat JS load performance, you'll need to instrument the
+loading of the script. Following the directions on support.chartbeat.com
+(http://support.chartbeat.com/docs/#code), you'll need to amend the
+loadChartbeat function like this:
+
+  function loadChartbeat() {
+      var e = document.createElement('script');
+      e.setAttribute('language', 'javascript');
+      e.setAttribute('type', 'text/javascript');
+      e.setAttribute('src', '//static.chartbeat.com/js/chartbeat.js');
+      BOOMR.plugins.CB.jsTimer(e);
+      document.body.appendChild(e);
+  }
+
 The plugin will also replace the User Page Load metric in Chartbeat for
 Everyone with the Boomerang t_done metric which is generally more accurate
 and does not require JS at the top of the page.
@@ -33,7 +47,7 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
 IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-*/
+**/
 
 // w is the window object
 (function(w) {
@@ -58,7 +72,7 @@ var impl = {
     'cb.ping1.load',
     'cb.ping1.dur'
     ],
-  _is_complete: false,
+  _is_complete: true,
   _timedLoads: {},
   _pageLoadTime: 0,
 
@@ -103,7 +117,10 @@ var impl = {
     for (var v = 0; v < vlen; v++) {
       var b_var = impl.sendVars[v];
       if (vars[b_var]) {
-        cbq.push(['_'.concat(b_var), vars[b_var]]);
+        var key = '_'.concat(b_var);
+        var val = vars[b_var];
+        cbq.push([key, val]);
+        cbq.push(['_demo', key.concat('=').concat(val)]);
       }
     }
   },
@@ -148,6 +165,7 @@ var impl = {
 BOOMR.plugins.CB = {
 
   init: function(config) {
+    BOOMR.debug('init', 'cb');
     BOOMR.utils.pluginConfig(impl, config, 'CB', ['sendVars']);
 
     BOOMR.subscribe('before_beacon', impl.updateCbVars, null, impl);
